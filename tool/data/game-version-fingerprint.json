@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "buildid": "25201480",
+  "game_name": "ACE COMBAT 8: WINGS OF THEVE",
+  "supported_exe_sha256": "51510e2a520565dbe81fb0d569e95cd4393077acaaa859371489b80b8128829f",
+  "exe_path": "Game/Binaries/Win64/AceCombat8.exe",
+  "pak_path": "Game/Content/Paks/pakchunk0-Windows.pak",
+  "pak_size": 10116323841,
+  "footer_bytes": 221,
+  "footer_sha256": "f40b6df8d5bbe71a6177bde70cafa6f8272495586505faeb490ef51c6ddfb78b",
+  "index_offset": 10111551476,
+  "index_size": 1926608,
+  "index_sha256": "fa7875cec705bac57570012ccb0d5e3c6d9b460aca6b52c34959e672d1dcd677",
+  "source_reads": [
+    "CP_A Japanese",
+    "CP_B English",
+    "ON_A Japanese",
+    "ON_B English",
+    "CP_Cmn IDs",
+    "ON_Cmn IDs"
+  ],
+  "official_chinese_read": false
+}

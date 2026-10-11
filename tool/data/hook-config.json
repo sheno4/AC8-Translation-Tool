@@ -1,0 +1,25 @@
+{
+  "patch_id": "ac8-zh-text-25201480-v1",
+  "supported_exe_sha256": "51510e2a520565dbe81fb0d569e95cd4393077acaaa859371489b80b8128829f",
+  "patched_exe_sha256": "259339a49fcf6f592feb415a07b7a3feaa9a5dacd8fc364ce14667fe09576872",
+  "exe_path": "Game/Binaries/Win64/AceCombat8.exe",
+  "byte_patches": [
+    {
+      "offset": 121304966,
+      "original_hex": "664183c641",
+      "patched_hex": "e95a455000"
+    },
+    {
+      "offset": 126565605,
+      "original_hex": "cccccccccccccccccccccccccccccccccccccccc",
+      "patched_hex": "4183fe0c75044183c60d664183c641e992baafff"
+    }
+  ],
+  "runtime_verified": false,
+  "culture_index": 12,
+  "replacement_suffix": "Z",
+  "process_names": [
+    "AceCombat8.exe",
+    "start_protected_game.exe"
+  ]
+}

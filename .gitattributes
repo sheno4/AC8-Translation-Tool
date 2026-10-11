@@ -1,0 +1,5 @@
+# Preserve source hashes, classification references and translation encoding;
+# do not normalize line endings on checkout.
+* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+*.locres binary
+tool/data/** binary
