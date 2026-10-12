@@ -4,8 +4,8 @@
 
 下载 **[1.0.2 发布版](https://github.com/sheno4/AC8-Translation-Tool/releases/tag/v1.0.2)**：
 
-- `AC8翻译工具-1.0.2.exe`：独立工具，不含已填写译文。
-- `AC8中文翻译-1.0.2.zip`：可选的现成译文包，包含工具和两份中文译文 JSON。
+- [AC8翻译工具-1.0.2.exe](https://github.com/sheno4/AC8-Translation-Tool/releases/download/v1.0.2/AC8-1.0.2.exe)：独立工具，不含已填写译文。
+- [AC8中文翻译-1.0.2.zip](https://github.com/sheno4/AC8-Translation-Tool/releases/download/v1.0.2/AC8-1.0.2.zip)：可选的现成译文包，包含工具、两份中文译文、使用说明和离线配置。
 
 Windows 64 位独立程序，用于导出日英文本、填写中文译文并替换游戏的官方简体中文。
 双击 **AC8翻译工具.exe**，无需安装 Python。请将它放在有写入权限的普通文件夹中。
