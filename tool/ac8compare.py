@@ -47,15 +47,13 @@ def export_comparison(game_dir, input_path, output_dir, include_official=True, i
     """
     input_path = Path(input_path).resolve()
     output_dir = Path(output_dir).resolve()
-    game_root = Path(game_dir).resolve()
-    if output_dir == game_root or game_root in output_dir.parents:
+    game_root = Path(game_dir).resolve() if game_dir else None
+    if game_root is not None and (output_dir == game_root or game_root in output_dir.parents):
         raise ValueError('对照文件请保存到项目目录，不能写入游戏目录。')
     source = ac8tool.load_translation_document(input_path)
     validation, entries = ac8tool._validate_document(source, allow_partial=True, import_options=import_options)
     plan = ac8tool.selection_plan(source, entries, import_options=import_options)
-    game_check = ac8tool.check_game_version(game_root)
-    if not game_check['ok']:
-        raise ValueError('；'.join(game_check['errors']))
+    game_check = ac8tool.translation_source_check(game_root)
     official, reference = ac8tool._official_sources() if include_official else ({}, None)
     issues = {issue['id']: issue for issue in validation['format_issues']}
     short_ids = {entry['id']: number for number, entry in
@@ -148,7 +146,7 @@ def export_comparison(game_dir, input_path, output_dir, include_official=True, i
     counts['format_issue_unique'] = len(issue_entries)
     read_official = bool(include_official or validation['official_chinese_read'])
     document = dict(schema='ac8-comparison-v1', source_revision=source['source_revision'],
-                    buildid=game_check['buildid'], translation_file=str(input_path),
+        buildid=game_check['source_buildid'], translation_file=str(input_path),
                     official_column_visible=bool(include_official), official_reference=reference,
                     official_chinese_read=read_official, counts=dict(counts), rows=rows,
                     translation_selection=plan['selection'],
@@ -211,7 +209,7 @@ const statusNames={missing:'未填写',filled:'已填写',same:'与官中相同'
 const excludedNames={official:'保留官中',en:'使用英文'};
 const official=!!data.official_column_visible;
 const summary=data.counts;
-byId('source').textContent='Steam build '+data.buildid+' · '+(official?'日文 / 英文 / 官中 / 自译':'日文 / 英文 / 自译');
+byId('source').textContent='原文快照 '+data.buildid+' · '+(official?'日文 / 英文 / 官中 / 自译':'日文 / 英文 / 自译');
 byId('summary').textContent='共 '+summary.total_slots+' 个文本槽，参与翻译 '+summary.selected_slots+'，不翻译 '+summary.excluded_slots+'。参与翻译中：已填写 '+summary.filled_slots+'，未填写 '+summary.missing_slots+'，格式问题 '+summary.format_issue_slots+(official?'，与官中相同 '+summary.same_as_official_slots+'，不同 '+summary.different_from_official_slots:'');
 if(!official){for(const option of Array.from(byId('status').options)){if(['same','different'].includes(option.value))option.remove();}}
 const columns=official?['文本槽 / 状态','日文','英文','官方简体中文','你的中文']:['文本槽 / 状态','日文','英文','你的中文'];

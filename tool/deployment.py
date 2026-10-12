@@ -247,7 +247,10 @@ def _owned(value: dict, patch_id: str, *, journal=False) -> None:
         raise DeploymentError("补丁状态标识无效。")
     for index, entry in enumerate(entries):
         expected = f"backups/{index:05d}.bin"
-        if not journal and entry.get("backup") not in (None, expected):
+        backup = entry.get("backup")
+        updated_exe_backup = (index == 0 and isinstance(backup, str)
+                              and re.fullmatch(r"backups/[0-9a-f]{32}-00000\.bin", backup))
+        if not journal and backup not in (None, expected) and not updated_exe_backup:
             raise DeploymentError("原文件备份路径无效。")
         if not journal and bool(entry.get("backup")) != bool(entry.get("original_sha256")):
             raise DeploymentError("原文件备份与校验值不一致。")
@@ -259,6 +262,13 @@ def _owned(value: dict, patch_id: str, *, journal=False) -> None:
                 raise DeploymentError("状态校验值无效。")
     if journal and not re.fullmatch("[0-9a-f]{32}", value.get("transaction_id", "")):
         raise DeploymentError("事务标识无效。")
+    if journal:
+        for key in ("new_backups", "retired_backups"):
+            paths = value.get(key, [])
+            if not isinstance(paths, list) or any(
+                    not isinstance(path, str) or not re.fullmatch(
+                        r"backups/(?:[0-9a-f]{32}-)?00000\.bin", path) for path in paths):
+                raise DeploymentError("更新 EXE 的事务备份路径无效。")
 
 
 def _internal(root: Path, patch_id: str, relative: str) -> Path:
@@ -290,6 +300,15 @@ def _clear_transaction(root: Path, patch_id: str, journal: dict) -> None:
                 path.unlink()
     for relative in (f"transactions/{transaction_id}/rollback", f"transactions/{transaction_id}/stage", f"transactions/{transaction_id}", "transactions"):
         _empty_dir(_internal(root, patch_id, relative))
+    # Keep whichever original backup the committed state currently owns. This
+    # makes interruption before/after a new game EXE baseline recoverable.
+    directory = _safe(root, f"{BACKUP_DIRECTORY}/{patch_id}")
+    state = _load_state(directory, patch_id)
+    active_backups = {entry.get("backup") for entry in state["files"]} if state else set()
+    for relative in journal.get("new_backups", []) + journal.get("retired_backups", []):
+        path = _internal(root, patch_id, relative)
+        if relative not in active_backups and path.is_file():
+            path.unlink()
     path = _internal(root, patch_id, "journal.json")
     if path.is_file():
         path.unlink()
@@ -398,7 +417,10 @@ def _config(value) -> dict:
     expected_patched = str(config.get("patched_exe_sha256", "")).lower()
     if not re.fullmatch("[0-9a-f]{64}", expected_patched):
         raise DeploymentError("Hook 必须绑定预期 patched_exe_sha256。")
-    return {"patch_id": patch_id, "patch_version": str(config.get("patch_version", "1")), "exe_path": EXE_PATH, "supported_exe_sha256": sorted(hashes), "patched_exe_sha256": expected_patched, "byte_patches": patches}
+    rebase = config.get("rebase_exe", False)
+    if type(rebase) is not bool:
+        raise DeploymentError("更新 EXE 的基准标识必须为布尔值。")
+    return {"patch_id": patch_id, "patch_version": str(config.get("patch_version", "1")), "exe_path": EXE_PATH, "supported_exe_sha256": sorted(hashes), "patched_exe_sha256": expected_patched, "byte_patches": patches, "rebase_exe": rebase}
 
 
 def _copy_payload(value, destination: Path) -> None:
@@ -478,6 +500,40 @@ def original_exe_hash(game_root=DEFAULT_GAME_ROOT, patch_id=DEFAULT_PATCH_ID) ->
     return result
 
 
+def inspect_exe_source(game_root, patch_id=DEFAULT_PATCH_ID) -> dict:
+    """Read an original backup or a candidate new EXE after a game update.
+
+    The caller must validate a replacement EXE's patch structure and resources
+    before requesting rebase. Existing DAT files and backups remain guarded.
+    """
+    root = _root(game_root)
+    patch_id = _patch_id(patch_id)
+    directory = _safe(root, f"{BACKUP_DIRECTORY}/{patch_id}")
+    if (directory / "journal.json").exists():
+        raise DeploymentError("有未完成操作，请先撤回修改以恢复事务。")
+    state = _load_state(directory, patch_id)
+    current = _safe(root, EXE_PATH)
+    actual = _current(current)
+    if actual is None:
+        raise DeploymentError("找不到游戏 AceCombat8.exe。")
+    if state and state["status"] == "installed":
+        for index, entry in enumerate(state["files"]):
+            if entry["backup"]:
+                _assert_current(_internal(root, patch_id, entry["backup"]),
+                                entry["original_sha256"], "原文件备份 " + entry["path"])
+            if index:
+                _assert_current(_safe(root, entry["path"]),
+                                entry["installed_sha256"], entry["path"])
+        if actual == state["files"][0]["installed_sha256"]:
+            original = _internal(root, patch_id, state["files"][0]["backup"])
+            return dict(path=str(original), sha256=state["files"][0]["original_sha256"],
+                        current_sha256=actual, installed=True, rebase_exe=False)
+        return dict(path=str(current), sha256=actual, current_sha256=actual,
+                    installed=True, rebase_exe=True)
+    return dict(path=str(current), sha256=actual, current_sha256=actual,
+                installed=False, rebase_exe=False)
+
+
 def install(game_root, payloads: dict, hook_config) -> dict:
     """Install/update byte-bound EXE hook and two opaque DAT payloads.
 
@@ -496,9 +552,16 @@ def install(game_root, payloads: dict, hook_config) -> dict:
         _recover(root, patch_id, directory)
         previous = _load_state(directory, patch_id)
         if previous:
-            _verify_installed(root, previous, patch_id)
-            original_exe = _internal(root, patch_id, previous["files"][0]["backup"])
-            original_hash = previous["files"][0]["original_sha256"]
+            if config["rebase_exe"]:
+                source = inspect_exe_source(root, patch_id)
+                if not source["rebase_exe"]:
+                    raise DeploymentError("游戏 EXE 状态已变化，请重新运行导入。")
+                original_exe = Path(source["path"])
+                original_hash = source["sha256"]
+            else:
+                _verify_installed(root, previous, patch_id)
+                original_exe = _internal(root, patch_id, previous["files"][0]["backup"])
+                original_hash = previous["files"][0]["original_sha256"]
         else:
             original_exe = _safe(root, EXE_PATH)
             original_hash = _current(original_exe)
@@ -506,16 +569,26 @@ def install(game_root, payloads: dict, hook_config) -> dict:
             if any(item.name != "operation.lock" for item in directory.iterdir()):
                 raise DeploymentError("备份目录存在未知内容，已停止。")
         if original_hash not in config["supported_exe_sha256"]:
-            raise DeploymentError("游戏 EXE 版本不匹配。请对当前版本重新生成 Hook。")
+            raise DeploymentError("游戏 EXE 在兼容检查后发生变化，请重新运行导入。")
         transaction_id = uuid.uuid4().hex
         files = []
         originals = []
         created = previous.get("created_directories", []) if previous else _created_directories(root, [EXE_PATH, *DATA_PATHS])
         for index, relative in enumerate([EXE_PATH, *DATA_PATHS]):
-            old_hash = _current(_safe(root, relative))
+            if index == 0 and config["rebase_exe"]:
+                old_hash = original_hash
+            elif previous:
+                old_hash = previous["files"][index]["installed_sha256"]
+            else:
+                old_hash = original_hash if index == 0 else _current(_safe(root, relative))
             files.append({"path": relative, "old_sha256": old_hash, "new_sha256": None, "rollback": f"transactions/{transaction_id}/rollback/{index:05d}.bin"})
             originals.append(dict(previous["files"][index]) if previous else {"path": relative, "original_sha256": old_hash, "backup": f"backups/{index:05d}.bin" if old_hash else None})
         journal = {"owner": OWNER, "schema_version": SCHEMA_VERSION, "patch_id": patch_id, "transaction_id": transaction_id, "action": "install", "phase": "preparing", "had_state": bool(previous), "created_directories": created, "files": files}
+        if previous and config["rebase_exe"]:
+            replacement_backup = f"backups/{transaction_id}-00000.bin"
+            journal["new_backups"] = [replacement_backup]
+            journal["retired_backups"] = [originals[0]["backup"]]
+            originals[0].update(original_sha256=original_hash, backup=replacement_backup)
         _json_write(directory / "journal.json", journal)
         try:
             for folder in ("backups", f"transactions/{transaction_id}/rollback", f"transactions/{transaction_id}/stage"):
@@ -530,6 +603,10 @@ def install(game_root, payloads: dict, hook_config) -> dict:
                         backup = _internal(root, patch_id, originals[index]["backup"])
                         shutil.copyfile(target, backup)
                         _assert_current(backup, entry["old_sha256"], "原文件备份")
+                    elif index == 0 and config["rebase_exe"]:
+                        backup = _internal(root, patch_id, originals[index]["backup"])
+                        shutil.copyfile(target, backup)
+                        _assert_current(backup, entry["old_sha256"], "更新后 EXE 原文件备份")
                 stage = _internal(root, patch_id, f"transactions/{transaction_id}/stage/{index:05d}.bin")
                 if index == 0:
                     _apply_bytes(original_exe, stage, config["byte_patches"])
@@ -540,7 +617,7 @@ def install(game_root, payloads: dict, hook_config) -> dict:
                     raise DeploymentError("定向修改后的 EXE 整文件 SHA-256 与预期不符，已停止。")
                 originals[index]["installed_sha256"] = entry["new_sha256"]
             fingerprint = hashlib.sha256(json.dumps([config, [entry["new_sha256"] for entry in files]], sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-            if previous and previous["fingerprint"] == fingerprint:
+            if previous and not config["rebase_exe"] and previous["fingerprint"] == fingerprint:
                 _clear_transaction(root, patch_id, journal)
                 result = status(root, patch_id)
                 result["action"] = "unchanged"

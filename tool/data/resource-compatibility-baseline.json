@@ -1,0 +1,51 @@
+{
+  "schema": "ac8-resource-compatibility-v1",
+  "source_snapshot_buildid": "25201480",
+  "snapshot_fingerprint": "3788af368ca00e24a3769f88fd2b6c3c8c4da6b63fb4013859eb79d823264616",
+  "preferred_key_scan_file_offset": 463209803,
+  "compatibility_rule": "all relevant opaque DAT bytes and Cmn ID/index resources must match; archive offsets, sizes and other files are not locked",
+  "official_chinese_text_decoded": false,
+  "key_embedded": false,
+  "resources": [
+    {
+      "path": "Live/Content/Localization/GameData/CP_Cmn.dat",
+      "size": 178294,
+      "payload_sha256": "dc773dbb11f1535b5b1a5809520a9b520b97b557d1c3fc54806837103237c4e6"
+    },
+    {
+      "path": "Live/Content/Localization/GameData/CP_A.dat",
+      "size": 538181,
+      "payload_sha256": "9e84a8c6ced711c58a36561a81f1b121120054255eeaded877310fa26000fc81"
+    },
+    {
+      "path": "Live/Content/Localization/GameData/CP_B.dat",
+      "size": 482899,
+      "payload_sha256": "eadd5ebcc91d942b14cac805b215562e2f20284d0fafd3942de724fe2f9be142"
+    },
+    {
+      "path": "Live/Content/Localization/GameData/CP_M.dat",
+      "size": 486394,
+      "payload_sha256": "44931b935198de92665dc2a43b7db7abf35043a79adc5b19b822d19243fa6931"
+    },
+    {
+      "path": "Live/Content/Localization/GameData/ON_Cmn.dat",
+      "size": 50154,
+      "payload_sha256": "946e9648d11e9020588d06241541faa847ee1451bb3c84eea1ec8251e816d4e9"
+    },
+    {
+      "path": "Live/Content/Localization/GameData/ON_A.dat",
+      "size": 91056,
+      "payload_sha256": "53c9edb022df3f876b54518611da743dcebfc8d9545aa8bf95de97b3cad4f496"
+    },
+    {
+      "path": "Live/Content/Localization/GameData/ON_B.dat",
+      "size": 85022,
+      "payload_sha256": "7a95c9102fe9d54175108f974a70d03cd3a795fa1183754bb852cf66de5216ef"
+    },
+    {
+      "path": "Live/Content/Localization/GameData/ON_M.dat",
+      "size": 80750,
+      "payload_sha256": "32bedffb2a9b499541af91bbc3ab7864b32bfe6bd8733103577bb5c58ef52847"
+    }
+  ]
+}

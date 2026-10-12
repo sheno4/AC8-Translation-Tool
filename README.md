@@ -1,9 +1,9 @@
 # AC8翻译工具 · ACE COMBAT 8
 
-下载 **[1.0 发布版](https://github.com/sheno4/AC8-Translation-Tool/releases/tag/v1.0)**：
+下载 **[1.0.1 发布版](https://github.com/sheno4/AC8-Translation-Tool/releases/tag/v1.0.1)**：
 
-- `AC8-Translation-Tool-v1.0.exe`：独立工具，不含已填写译文。
-- `AC8-Chinese-Translation-v1.0.zip`：可选的现成译文包，包含工具和两份中文译文 JSON。
+- `AC8-Translation-Tool-v1.0.1.exe`：独立工具，不含已填写译文。
+- `AC8-Chinese-Translation-v1.0.1.zip`：可选的现成译文包，包含工具和两份中文译文 JSON。
 
 
 Windows 64 位独立程序，用于导出日英文本、填写中文译文并替换游戏的官方简体中文。
@@ -70,10 +70,13 @@ JSON 中双引号写成 `\"`，反斜杠写成 `\\`，换行写成 `\n`；保存
 
 ## 备份与版本
 
-导入会备份原文件并修改中文资源加载位置。备份在游戏目录 `.AC8-Localization-backup`。
+导入会备份原文件，并修改游戏 `AceCombat8.exe`，使其读取生成的 `CP_Z.dat`、`ON_Z.dat`。备份在游戏目录 `.AC8-Localization-backup`。
 撤回恢复首次导入前的游戏文件，不依赖 EXE 所在位置；撤回前请保留备份。
-工具拒绝不支持的游戏版本、未知 EXE 改动及导入后的外部文件改动。
-当前支持 **Steam build 25201480**。
+导出、译文校验和对照使用内置原文库，不检查 Steam 版本或游戏文件，也无需选择游戏目录。
+导入按当前 EXE 的补丁代码结构和八份相关文本资源检查兼容性，不锁定 Steam build 或整份资源包的哈希。
+游戏更新后，相关代码和文本保持兼容时可重新导入；撤回恢复更新后的原 EXE。
+补丁代码或文本映射改变时会提示需要适配，避免将旧译文写入错误位置。
+JSON 中的版本信息描述内置原文快照，已有译文文件继续兼容。
 本工具不修改反作弊设置；联机前可通过“撤回修改”恢复原文件。
 源码版本由 Git 管理，版本号见 `VERSION`，历史见 `CHANGELOG.md`。
 恢复工具版本与撤回游戏修改是两项独立操作。

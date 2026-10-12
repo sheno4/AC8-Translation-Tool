@@ -175,59 +175,18 @@ def _counts(entries):
 
 
 def check_game_version(game_dir):
-    """Read only EXE and opaque PAK footer/index bytes, never localized text."""
-    _, _, expected, _ = _sources()
-    game_dir = Path(game_dir).resolve()
-    errors, observations = [], {}
-    exe = _relative_path(game_dir, expected['exe_path'])
-    pak = _relative_path(game_dir, expected['pak_path'])
-    if not exe.is_file():
-        errors.append(f'找不到游戏程序：{exe}')
-    else:
-        actual = _sha256(exe)
-        observations['exe_sha256'] = actual
-        observations['exe_status'] = 'original' if actual == expected['supported_exe_sha256'] else 'unknown'
-        if observations['exe_status'] == 'unknown':
-            # The deployment adapter must verify BOTH installed patch hash and
-            # original backup hash before accepting a known patched executable.
-            valid = False
-            try:
-                adapter = importlib.import_module('deployment_api')
-                valid = adapter.validate_patched_executable(
-                    str(game_dir), actual, expected['supported_exe_sha256'])
-            except (ImportError, OSError, ValueError, KeyError):
-                valid = False
-            if valid:
-                observations['exe_status'] = 'verified_tool_patch'
-            else:
-                errors.append('游戏程序版本不匹配；或程序被其他补丁修改。')
-    if not pak.is_file():
-        errors.append(f'找不到游戏资源包：{pak}')
-    else:
-        size = pak.stat().st_size
-        observations['pak_size'] = size
-        if size != expected['pak_size']:
-            errors.append('游戏资源包大小与受支持版本不一致。')
-        if size >= expected['footer_bytes']:
-            with pak.open('rb') as stream:
-                stream.seek(-expected['footer_bytes'], 2)
-                footer_digest = hashlib.sha256(stream.read(expected['footer_bytes'])).hexdigest()
-                observations['footer_sha256'] = footer_digest
-                if footer_digest != expected['footer_sha256']:
-                    errors.append('游戏资源包页脚指纹不一致。')
-                offset, length = expected['index_offset'], expected['index_size']
-                if offset < 0 or length < 0 or offset + length > size:
-                    errors.append('游戏资源包索引范围无效。')
-                else:
-                    stream.seek(offset)
-                    index_digest = hashlib.sha256(stream.read(length)).hexdigest()
-                    observations['index_sha256'] = index_digest
-                    if index_digest != expected['index_sha256']:
-                        errors.append('游戏资源包索引指纹不一致。')
-        else:
-            errors.append('游戏资源包长度不足。')
-    return dict(ok=not errors, game_dir=str(game_dir), buildid=expected['buildid'],
-                errors=errors, observations=observations, official_chinese_read=False)
+    """Legacy API name: inspect patch and text compatibility, not Steam build."""
+    adapter = importlib.import_module('deployment_api')
+    return adapter.compatibility_report(game_dir)
+
+
+def translation_source_check(game_dir=None):
+    """Offline work uses the bundled snapshot and never reads game files."""
+    version = _sources()[2]
+    return dict(ok=True, mode='bundled_translation_snapshot',
+                game_dir=str(game_dir) if game_dir else None,
+                source_buildid=version.get('buildid'), errors=[], observations={},
+                game_files_read=False, official_chinese_read=False)
 
 
 def _classification_reference():
@@ -361,9 +320,7 @@ def _document(scope, include_official=False, include_classification=False,
 def export_translations(game_dir, workspace, scope='game', output_path=None, include_official=True,
                         include_classification=False, selected_categories=None, excluded_policy='official',
                         compact=True):
-    version = check_game_version(game_dir)
-    if not version['ok']:
-        raise ValueError('；'.join(version['errors']))
+    version = translation_source_check(game_dir)
     workspace = Path(workspace).resolve()
     destination = Path(output_path).resolve() if output_path else workspace / 'translations.json'
     if destination.exists():
@@ -698,7 +655,7 @@ def inspect_import_protection(input_path, import_options=None, report_path=None)
 def check_translations(game_dir, input_path=None, allow_partial=False, report_path=None,
                        missing_policy=None, import_options=None):
     missing_policy = _missing_policy(allow_partial, missing_policy, default='keep')
-    version = check_game_version(game_dir)
+    version = check_game_version(game_dir) if input_path is None else translation_source_check(game_dir)
     if input_path is None:
         report = dict(ok=version['ok'], action='check', game_check=version,
                       official_chinese_read=False, game_files_changed=False)
@@ -707,7 +664,6 @@ def check_translations(game_dir, input_path=None, allow_partial=False, report_pa
                                            missing_policy=missing_policy, import_options=import_options)
         report = dict(**validation, action='check', game_check=version,
                       translation_file=str(Path(input_path).resolve()), game_files_changed=False)
-        report['ok'] = report['ok'] and version['ok']
         if missing_policy == 'keep' and validation['missing_engine_slots']:
             report['ok'] = False
             report['missing_policy_errors'] = [

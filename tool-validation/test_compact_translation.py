@@ -19,6 +19,24 @@ import ac8compare as compare
 
 
 class CompactTranslationTests(unittest.TestCase):
+    def test_offline_export_check_and_compare_never_check_the_game(self):
+        document = self.document(official=True)
+        source = self.root / 'translated.json'
+        compact.write_document(source, compact.pack_document(document))
+        with patch.object(tool, 'check_game_version', side_effect=AssertionError(
+                'Offline translation work must not inspect game files')):
+            exported = tool.export_translations('', self.root / 'export-work',
+                                                output_path=self.root / 'export.json')
+            checked = tool.check_translations('', source)
+            compared = compare.export_comparison('', source, self.root / 'comparison')
+        self.assertTrue(exported['ok'])
+        self.assertTrue(checked['ok'])
+        self.assertTrue(compared['ok'])
+        self.assertEqual(exported['game_check']['mode'], 'bundled_translation_snapshot')
+        self.assertFalse(exported['game_check']['game_files_read'])
+        self.assertEqual(tool.load_translation_document(source)['source_revision'],
+                         self.revision)
+
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory(prefix='ac8-compact-fixture-')
         self.addCleanup(self.directory.cleanup)

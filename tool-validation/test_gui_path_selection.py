@@ -102,9 +102,9 @@ class GuiPathSelectionTests(unittest.TestCase):
         self.assertEqual(dialog.call_args.kwargs['initialdir'], self.game)
         self.assertEqual(self.window.game.get(), self.game)
 
-    def test_missing_game_blocks_every_game_operation_before_dispatch(self):
+    def test_missing_game_blocks_only_install_and_restore(self):
         self.window.catalog.set(self.source)
-        for operation in ('export', 'check', 'compare', 'install', 'restore'):
+        for operation in ('install', 'restore'):
             with self.subTest(operation=operation):
                 self.window.run.reset_mock()
                 self.info.reset_mock()
@@ -115,6 +115,18 @@ class GuiPathSelectionTests(unittest.TestCase):
                 dialog.assert_not_called()
                 self.info.assert_called_once()
                 self.assertEqual(self.info.call_args.args[0], '游戏目录')
+
+    def test_offline_operations_allow_an_empty_game_directory(self):
+        self.window.catalog.set(self.source)
+        for operation in ('export', 'check', 'compare'):
+            with self.subTest(operation=operation):
+                self.window.run.reset_mock()
+                self.info.reset_mock()
+                self.window.game.set('')
+                with patch.object(gui.filedialog, 'asksaveasfilename', return_value=self.source):
+                    getattr(self.window, operation)()
+                self.window.run.assert_called_once()
+                self.info.assert_not_called()
 
     def test_missing_translation_blocks_check_compare_and_import(self):
         self.window.game.set(self.game)

@@ -108,7 +108,7 @@ class Window:
         self.progress = ttk.Progressbar(outer, mode='indeterminate')
         self.progress.pack(fill='x')
         self.write(('已自动找到游戏目录，可通过“选择”更换。' if game_directories else
-                    '未自动找到游戏，请手动选择游戏目录。')
+                    '导入或撤回前请选择游戏目录。')
                    + '\n请选择已有翻译 JSON，或先导出文本；翻译文件默认留空。\n只填写最后一列的译文，保存后校验并导入。导出和对照默认日英中。\n导入会备份游戏文件；“撤回修改”可恢复导入前的原文件。')
         self.root.after(100, self.poll)
         self.root.protocol('WM_DELETE_WINDOW', self.close)
@@ -141,8 +141,8 @@ class Window:
             options['initialfile'] = Path(source).name if source else DEFAULT_EXPORT_NAME
         return options
 
-    def paths_selected(self, translation=True):
-        if not self.game.get().strip():
+    def paths_selected(self, translation=True, require_game=True):
+        if require_game and not self.game.get().strip():
             messagebox.showinfo('游戏目录', '未找到游戏，请先选择游戏目录。')
             return False
         if translation and not self.catalog.get().strip():
@@ -238,7 +238,7 @@ class Window:
         self.root.after(100, self.poll)
 
     def export(self):
-        if not self.paths_selected(translation=False):
+        if not self.paths_selected(translation=False, require_game=False):
             return
         selected = filedialog.asksaveasfilename(title='导出待翻译文本（' + self.export_language.get() + '）',
             defaultextension='.json', filetypes=[('翻译文件', '*.json')],
@@ -254,7 +254,7 @@ class Window:
         self.run('导出文本', work)
 
     def check(self):
-        if not self.paths_selected():
+        if not self.paths_selected(require_game=False):
             return
         game, source = self.game.get(), self.catalog.get()
         options = self.import_options()
@@ -265,7 +265,7 @@ class Window:
         return {key: variable.get() for key, variable in self.import_variables.items()}
 
     def compare(self):
-        if not self.paths_selected():
+        if not self.paths_selected(require_game=False):
             return
         game, source = self.game.get(), self.catalog.get()
         include_official = self.compare_language.get() == '日英中'
@@ -298,7 +298,10 @@ class Window:
                 raise ValueError('生成的中文资源不完整，游戏尚未修改。')
             payloads = {'Game/Content/Localization/GameData/CP_Z.dat': candidates['CP_M.dat'][0],
                         'Game/Content/Localization/GameData/ON_Z.dat': candidates['ON_M.dat'][0]}
-            installed = deployment.install(game, payloads, ROOT / 'data' / 'hook-config.json')
+            hook_config = result.get('game_check', {}).get('hook_config')
+            if not isinstance(hook_config, dict):
+                raise ValueError('未获得当前游戏的兼容补丁，游戏尚未修改。')
+            installed = deployment.install(game, payloads, hook_config)
             confirm_import_result(installed)
             return {'result': '中文资源已导入；撤回可恢复导入前文件', 'translation_counts': result.get('counts'), 'deployment': installed}
         self.run('导入译文', work)

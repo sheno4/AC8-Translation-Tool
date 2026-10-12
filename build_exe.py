@@ -74,6 +74,7 @@ def main():
     command = [sys.executable, '-B', '-X', 'utf8', '-m', 'PyInstaller',
                '--onefile', '--windowed', '--noupx', '--noconfirm', '--name', NAME,
                '--paths', str(TOOL), '--hidden-import', 'deployment_api',
+               '--hidden-import', 'ac8exehook', '--hidden-import', 'ac8resourcecompat',
                '--distpath', str(WORK / 'dist'), '--workpath', str(WORK / 'work'),
                '--specpath', str(WORK / 'spec'), '--version-file', str(version_file),
                '--log-level', 'INFO']
