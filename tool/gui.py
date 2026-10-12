@@ -11,6 +11,11 @@ from tkinter import filedialog, messagebox, ttk
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
+VERSION_FILE = ROOT / 'VERSION'
+if not VERSION_FILE.is_file():
+    VERSION_FILE = ROOT.parent / 'VERSION'
+TOOL_VERSION = VERSION_FILE.read_text(encoding='utf-8-sig').strip()
+APP_TITLE = 'AC8翻译工具 v' + TOOL_VERSION
 import ac8tool
 import ac8compare
 import deployment
@@ -45,7 +50,7 @@ def confirm_import_result(installed):
 class Window:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title('AC8翻译工具')
+        self.root.title(APP_TITLE)
         self.root.geometry('940x680')
         self.root.minsize(900, 620)
         self.messages = queue.Queue()
@@ -64,7 +69,7 @@ class Window:
         style.configure('TButton', font=('Microsoft YaHei UI', 10), padding=8)
         outer = ttk.Frame(self.root, padding=20)
         outer.pack(fill='both', expand=True)
-        ttk.Label(outer, text='AC8翻译工具', font=('Microsoft YaHei UI', 16)).pack(anchor='w')
+        ttk.Label(outer, text=APP_TITLE, font=('Microsoft YaHei UI', 16)).pack(anchor='w')
         ttk.Label(outer, text='ACE COMBAT 8 · 导出原文 → 填写译文 → 校验并导入', foreground='#666666').pack(anchor='w', pady=(8, 16))
         self.path_row(outer, '游戏目录', self.game, self.browse_game)
         self.path_row(outer, '翻译文件', self.catalog, self.browse_catalog)
@@ -91,7 +96,6 @@ class Window:
         options.pack(fill='x', pady=(4, 10))
         ttk.Label(options, text='每次按当前文件替换；null 使用各位置原官中。').pack(side='left')
         ttk.Button(options, text='使用说明', command=self.show_help).pack(side='right')
-        ttk.Button(options, text='打开翻译文件', command=self.open_catalog).pack(side='right', padx=6)
         protection = ttk.LabelFrame(outer, text='导入时是否替换这些文字', padding=(10, 6))
         protection.pack(fill='x', pady=(8, 6))
         choices = ttk.Frame(protection)
@@ -163,10 +167,10 @@ class Window:
         for button in self.buttons:
             button.configure(state='disabled')
         self.progress.start(12)
-        self.root.title('AC8翻译工具')
+        self.root.title(APP_TITLE)
         if name == '导入译文':
             self.import_button.configure(text='正在导入…')
-            self.root.title('AC8翻译工具 · 正在导入，尚未完成')
+            self.root.title(APP_TITLE + ' · 正在导入，尚未完成')
             self.write('正在导入，尚未完成，请勿关闭。')
         else:
             self.write(name + '…')
@@ -191,7 +195,7 @@ class Window:
                 button.configure(state='normal')
             if name == '导入译文':
                 self.import_button.configure(text='导入译文')
-                self.root.title('AC8翻译工具 · ' + ('导入未完成' if kind == 'error' else '导入完成'))
+                self.root.title(APP_TITLE + ' · ' + ('导入未完成' if kind == 'error' else '导入完成'))
             if kind == 'error':
                 self.write(name + '未完成：\n' + result)
                 messagebox.showerror('导入未完成' if name == '导入译文' else '操作未完成', result, parent=self.root)
@@ -311,15 +315,6 @@ class Window:
             return
         game = self.game.get()
         self.run('撤回修改', lambda: deployment.restore(game, PATCH_ID))
-
-    def open_catalog(self):
-        if self.busy:
-            return
-        source = self.catalog.get().strip()
-        if not source or not Path(source).is_file():
-            messagebox.showinfo('翻译文件', '请选择已有翻译 JSON，或先导出文本。')
-            return
-        os.startfile(source)
 
     def show_help(self):
         os.startfile(str(ROOT / '使用说明.txt'))

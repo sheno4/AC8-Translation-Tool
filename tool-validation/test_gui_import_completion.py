@@ -78,7 +78,7 @@ class GuiImportCompletionTests(unittest.TestCase):
     def test_progress_keeps_import_pending(self):
         self.start_import()
         self.assertTrue(self.window.busy)
-        self.assertEqual(self.window.root.window_title, 'AC8翻译工具 · 正在导入，尚未完成')
+        self.assertEqual(self.window.root.window_title, gui.APP_TITLE + ' · 正在导入，尚未完成')
         self.assertEqual(self.window.import_button.options['text'], '正在导入…')
         self.assertTrue(all(button.options['state'] == 'disabled'
                             for button in self.window.buttons))
@@ -99,7 +99,7 @@ class GuiImportCompletionTests(unittest.TestCase):
         self.window.poll()
         self.assertFalse(self.window.busy)
         self.assertFalse(self.window.progress.running)
-        self.assertEqual(self.window.root.window_title, 'AC8翻译工具 · 导入完成')
+        self.assertEqual(self.window.root.window_title, gui.APP_TITLE + ' · 导入完成')
         self.assertEqual(self.window.import_button.options['text'], '导入译文')
         self.assertTrue(all(button.options['state'] == 'normal'
                             for button in self.window.buttons))
@@ -115,7 +115,7 @@ class GuiImportCompletionTests(unittest.TestCase):
         self.window.poll()
         self.assertFalse(self.window.busy)
         self.assertFalse(self.window.progress.running)
-        self.assertEqual(self.window.root.window_title, 'AC8翻译工具 · 导入未完成')
+        self.assertEqual(self.window.root.window_title, gui.APP_TITLE + ' · 导入未完成')
         self.assertEqual(self.window.import_button.options['text'], '导入译文')
         self.showerror.assert_called_once_with('导入未完成', error, parent=self.window.root)
         self.showinfo.assert_not_called()

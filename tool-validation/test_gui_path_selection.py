@@ -152,14 +152,5 @@ class GuiPathSelectionTests(unittest.TestCase):
         restore.assert_called_once_with(self.game, gui.PATCH_ID)
         self.info.assert_not_called()
 
-    def test_opening_an_empty_translation_does_not_open_the_current_directory(self):
-        self.window.catalog.set('   ')
-        with patch.object(gui.os, 'startfile') as startfile:
-            self.window.open_catalog()
-        startfile.assert_not_called()
-        self.info.assert_called_once()
-        self.assertEqual(self.info.call_args.args[0], '翻译文件')
-
-
 if __name__ == '__main__':
     unittest.main(verbosity=2)

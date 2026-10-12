@@ -46,6 +46,7 @@ def verify_bundle():
     if ac8importoptions.DEFAULT_IMPORT_OPTIONS != dict(hud_labels=False, equipment_short=False):
         raise ValueError('Default display protection options mismatch')
     return dict(ok=True, bundled_files=len(manifest), counts=counts, frozen=frozen,
+                tool_version=gui.TOOL_VERSION, window_title=gui.APP_TITLE,
                 external_python_required=not frozen,
                 tkinter_imported=True, window_created=False,
                 game_accessed=False, official_chinese_read=False,

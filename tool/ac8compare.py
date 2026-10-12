@@ -179,15 +179,17 @@ _HTML = r'''<!doctype html>
 :root{color-scheme:light dark;font-family:"Microsoft YaHei UI",system-ui,sans-serif}
 body{margin:0;padding:24px;background:#f5f6f8;color:#182535}h1{font-size:23px;margin:0 0 8px}
 p{margin:8px 0;color:#435064}.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0}
-input,select,button{font:inherit;border:1px solid #b9c2cf;border-radius:5px;background:white;color:#182535;padding:8px}
+input,select,button,textarea{font:inherit;border:1px solid #b9c2cf;border-radius:5px;background:white;color:#182535;padding:8px}
+input[type=checkbox]{padding:0;accent-color:#245aa8}
 #search{min-width:260px;flex:1}button{cursor:pointer}button:disabled{opacity:.45;cursor:default}
 #page{width:60px}label{display:flex;gap:6px;align-items:center}#summary,#result{font-size:14px}
 .table-wrap{overflow-x:auto;background:white;border:1px solid #d5dbe3;border-radius:7px}
-table{border-collapse:collapse;table-layout:fixed;width:100%;min-width:1080px}th,td{border-bottom:1px solid #dce1e8;padding:12px;text-align:left;vertical-align:top}
-th{background:#eaf0f7}th:first-child{width:190px}td{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.65}
+table{border-collapse:collapse;table-layout:fixed;width:100%;min-width:1120px}th,td{border-bottom:1px solid #dce1e8;padding:12px;text-align:left;vertical-align:top}
+th{background:#eaf0f7}th:nth-child(2){width:190px}.select-col{width:32px;text-align:center}td{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.65}
+tr.chosen td{background:#edf4ff}#manual-ids{width:100%;box-sizing:border-box;font-family:monospace;margin-bottom:12px}
 .meta{font-size:12px;color:#5d6878}.badge{display:block;color:#245aa8;margin-top:7px}.problem{color:#a8321f;font-size:12px;margin-top:7px}.note{display:block;font-size:12px;color:#5d6878;margin-top:8px}
 .empty{color:#737d8c}footer{font-size:12px;color:#69758a;margin:18px 0}
-@media(prefers-color-scheme:dark){body{background:#161c24;color:#e2e9f4}p,.meta,.note,footer{color:#b1bdce}input,select,button,.table-wrap{background:#202a37;color:#e2e9f4;border-color:#4a586a}th{background:#2c3b50}td,th{border-color:#415066}.problem{color:#ff9987}.badge{color:#99c2ff}}
+@media(prefers-color-scheme:dark){body{background:#161c24;color:#e2e9f4}p,.meta,.note,footer{color:#b1bdce}input,select,button,textarea,.table-wrap{background:#202a37;color:#e2e9f4;border-color:#4a586a}th{background:#2c3b50}td,th{border-color:#415066}tr.chosen td{background:#253e5a}.problem{color:#ff9987}.badge{color:#99c2ff}}
 </style></head><body>
 <h1>ACE COMBAT 8 · 译文对照</h1>
 <p id="source"></p><p id="summary"></p>
@@ -198,8 +200,10 @@ th{background:#eaf0f7}th:first-child{width:190px}td{white-space:pre-wrap;overflo
 <label><input id="issues" type="checkbox">只看应用译文的格式问题</label></div>
 <div class="bar"><span id="result"></span><button id="prev" type="button">上一页</button><label>第 <input id="page" type="number" min="1" value="1"> 页</label><button id="next" type="button">下一页</button>
 <select id="size" aria-label="每页条目数"><option value="50">每页 50 条</option><option value="100" selected>每页 100 条</option><option value="200">每页 200 条</option></select></div>
+<div class="bar"><span id="selection-count">已选 0 个 ID</span><button id="copy-ids" type="button" disabled>复制选中 ID</button><button id="clear-selection" type="button" disabled>清空选择</button><span id="copy-status" role="status" aria-live="polite"></span></div>
+<textarea id="manual-ids" rows="2" readonly hidden aria-label="选中的 ID，可按 Ctrl+C 复制"></textarea>
 <div class="table-wrap"><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table></div>
-<footer>本页为离线只读对照。相同／不同按逐个文本槽精确比较，不表示翻译质量。旧文件排除的文本仍按原选择处理。修改译文后请重新生成对照。</footer>
+<footer>勾选按翻译 ID 关联多个位置，翻页和筛选会保留选择；表头全选只作用于当前页。复制的 ID 对应当前翻译 JSON，重复位置只复制一次。<br>本页为离线只读对照。相同／不同按逐个文本槽精确比较，不表示翻译质量。旧文件排除的文本仍按原选择处理。修改译文后请重新生成对照。</footer>
 <script id="comparison-data" type="application/json">__COMPARISON_DATA__</script>
 <script>
 'use strict';
@@ -213,14 +217,47 @@ byId('source').textContent='原文快照 '+data.buildid+' · '+(official?'日文
 byId('summary').textContent='共 '+summary.total_slots+' 个文本槽，参与翻译 '+summary.selected_slots+'，不翻译 '+summary.excluded_slots+'。参与翻译中：已填写 '+summary.filled_slots+'，未填写 '+summary.missing_slots+'，格式问题 '+summary.format_issue_slots+(official?'，与官中相同 '+summary.same_as_official_slots+'，不同 '+summary.different_from_official_slots:'');
 if(!official){for(const option of Array.from(byId('status').options)){if(['same','different'].includes(option.value))option.remove();}}
 const columns=official?['文本槽 / 状态','日文','英文','官方简体中文','你的中文']:['文本槽 / 状态','日文','英文','你的中文'];
+const selectHead=document.createElement('th'),selectPage=document.createElement('input');
+selectHead.className='select-col';selectPage.type='checkbox';selectPage.id='select-page';selectPage.title='全选或取消当前页 ID';selectPage.setAttribute('aria-label','全选当前页 ID');selectHead.append(selectPage);byId('head').append(selectHead);
 for(const column of columns){const th=document.createElement('th');th.textContent=column;byId('head').append(th);}
 let filtered=data.rows,page=1,timer;
+const selectedIds=new Set();let copying=false;
+function visibleRows(){const size=Number(byId('size').value);return filtered.slice((page-1)*size,page*size);}
+function visibleIds(){return [...new Set(visibleRows().map(row=>row.short_id))];}
+function clearCopyFeedback(){byId('copy-status').textContent='';byId('manual-ids').hidden=true;byId('manual-ids').value='';}
+function syncSelection(){
+ for(const input of document.querySelectorAll('[data-select-id]')){
+  input.checked=selectedIds.has(Number(input.dataset.selectId));input.closest('tr').classList.toggle('chosen',input.checked);
+ }
+ const ids=visibleIds(),count=ids.filter(id=>selectedIds.has(id)).length;
+ selectPage.checked=ids.length>0&&count===ids.length;selectPage.indeterminate=count>0&&count<ids.length;selectPage.disabled=ids.length===0;
+ byId('selection-count').textContent='已选 '+selectedIds.size+' 个 ID';byId('copy-ids').disabled=copying||selectedIds.size===0;byId('clear-selection').disabled=selectedIds.size===0;
+}
+function toggleId(id,checked){if(checked)selectedIds.add(id);else selectedIds.delete(id);clearCopyFeedback();syncSelection();}
+function fallbackCopy(text){
+ const field=document.createElement('textarea');field.value=text;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';document.body.append(field);
+ try{field.focus();field.select();return typeof document.execCommand==='function'&&document.execCommand('copy');}catch(error){return false;}finally{field.remove();}
+}
+async function copySelectedIds(){
+ if(copying||selectedIds.size===0)return;
+ const ids=[...selectedIds].sort((first,second)=>first-second),text=JSON.stringify(ids);copying=true;clearCopyFeedback();byId('copy-status').textContent='正在复制…';syncSelection();
+ let copied=false;
+ try{
+  if(navigator.clipboard&&typeof navigator.clipboard.writeText==='function'){
+   try{await navigator.clipboard.writeText(text);copied=true;}catch(error){}
+  }
+  if(!copied)copied=fallbackCopy(text);
+  if(copied)byId('copy-status').textContent='已复制 '+ids.length+' 个 ID';
+  else{const field=byId('manual-ids');field.value=text;field.hidden=false;field.focus();field.select();byId('copy-status').textContent='浏览器未允许自动复制，请按 Ctrl+C。';}
+ }finally{copying=false;syncSelection();}
+}
 function cell(text){const td=document.createElement('td');if(text===null||text===undefined){td.textContent='（未填写）';td.className='empty';}else td.textContent=text;return td;}
 function render(){
  const size=Number(byId('size').value),pages=Math.max(1,Math.ceil(filtered.length/size));page=Math.min(pages,Math.max(1,page));
  const fragment=document.createDocumentFragment();
- for(const row of filtered.slice((page-1)*size,page*size)){
+ for(const row of visibleRows()){
   const tr=document.createElement('tr'),td=document.createElement('td'),meta=document.createElement('div');
+  const pickCell=document.createElement('td'),pick=document.createElement('input');pickCell.className='select-col';pick.type='checkbox';pick.dataset.selectId=String(row.short_id);pick.setAttribute('aria-label','选择 ID '+row.short_id);pick.addEventListener('change',()=>toggleId(row.short_id,pick.checked));pickCell.append(pick);tr.append(pickCell);
   td.textContent='序号 '+row.short_id+' · '+row.domain+(row.index===null?' / '+row.target+' / '+row.key:' #'+row.index);
   meta.className='meta';meta.textContent=row.text_ids_ascii.join('\n');td.append(meta);
   const badge=document.createElement('span');badge.className='badge';badge.textContent=statusNames[row.status]+(row.selected_for_translation?' · 格式参考 '+row.format_source.toUpperCase():' · '+excludedNames[row.excluded_policy]);td.append(badge);
@@ -233,6 +270,7 @@ function render(){
  byId('body').replaceChildren(fragment);byId('page').value=page;byId('page').max=pages;
  byId('prev').disabled=page<=1;byId('next').disabled=page>=pages;
  byId('result').textContent='筛选结果 '+filtered.length+' 条 · '+page+' / '+pages+' 页';
+ syncSelection();
 }
 function filter(){
  const query=byId('search').value.toLocaleLowerCase(),status=byId('status').value,domain=byId('domain').value,scope=byId('scope').value,issues=byId('issues').checked;
@@ -251,6 +289,9 @@ function filter(){
 byId('search').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(filter,200);});
 for(const id of ['status','domain','scope','issues'])byId(id).addEventListener('change',filter);
 byId('size').addEventListener('change',()=>{page=1;render();});
+selectPage.addEventListener('change',()=>{for(const id of visibleIds()){if(selectPage.checked)selectedIds.add(id);else selectedIds.delete(id);}clearCopyFeedback();syncSelection();});
+byId('copy-ids').addEventListener('click',copySelectedIds);
+byId('clear-selection').addEventListener('click',()=>{selectedIds.clear();clearCopyFeedback();syncSelection();});
 byId('prev').addEventListener('click',()=>{page--;render();});byId('next').addEventListener('click',()=>{page++;render();});
 byId('page').addEventListener('change',()=>{page=Number(byId('page').value)||1;render();});render();
 </script></body></html>'''
