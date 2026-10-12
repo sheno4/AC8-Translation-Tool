@@ -1,9 +1,13 @@
 # AC8翻译工具 · ACE COMBAT 8
 
-下载 **[1.0.1 发布版](https://github.com/sheno4/AC8-Translation-Tool/releases/tag/v1.0.1)**：
+当前源码为 **1.0.1**，尚未发布对应 EXE。以下使用说明描述当前源码。
 
-- `AC8-Translation-Tool-v1.0.1.exe`：独立工具，不含已填写译文。
-- `AC8-Chinese-Translation-v1.0.1.zip`：可选的现成译文包，包含工具和两份中文译文 JSON。
+下载现有 **[1.0 发布版](https://github.com/sheno4/AC8-Translation-Tool/releases/tag/v1.0)**：
+
+- `AC8-Translation-Tool-v1.0.exe`：独立工具，不含已填写译文。
+- `AC8-Chinese-Translation-v1.0.zip`：可选的现成译文包，包含工具和两份中文译文 JSON。
+
+现有 1.0 发行版仍检查固定游戏版本，源码 1.0.1 已改为兼容性检查。
 
 
 Windows 64 位独立程序，用于导出日英文本、填写中文译文并替换游戏的官方简体中文。
