@@ -10,6 +10,7 @@ import ctypes
 from ctypes import wintypes
 import hashlib
 import json
+import ntpath
 import os
 from pathlib import Path, PurePosixPath
 import re
@@ -27,6 +28,7 @@ DATA_PATHS = (
 BACKUP_DIRECTORY = ".AC8-Localization-backup"
 OWNER = "AC8.Localization.Deployment"
 SCHEMA_VERSION = 1
+GAME_PROCESS_NAMES = frozenset(("acecombat8.exe", "start_protected_game.exe"))
 
 
 class DeploymentError(RuntimeError):
@@ -136,6 +138,25 @@ def _assert_current(path: Path, expected, label: str) -> None:
         raise DeploymentError(f"文件已被其他程序修改，已停止以保留现有内容：{label}")
 
 
+def _process_path(value) -> str:
+    """Normalize Windows process paths without treating a directory as a name."""
+    path = ntpath.normcase(ntpath.normpath(str(value)))
+    if path.startswith("\\\\?\\unc\\"):
+        path = "\\\\" + path[8:]
+    elif path.startswith("\\\\?\\"):
+        path = path[4:]
+    return path
+
+
+def _is_game_process(root: Path, name: str, image: str | None) -> bool:
+    if name.casefold() not in GAME_PROCESS_NAMES:
+        return False
+    # Keep the guard conservative for the real game when access is denied.
+    if not image:
+        return True
+    return _process_path(image).startswith(_process_path(root).rstrip("\\/") + "\\")
+
+
 def _assert_game_stopped(root: Path) -> None:
     """Read-only process snapshot; fail closed if enumeration is unavailable."""
     if os.name != "nt":
@@ -166,7 +187,6 @@ def _assert_game_stopped(root: Path) -> None:
     if snapshot in (None, ctypes.c_void_p(-1).value):
         raise DeploymentError("无法枚举游戏进程，已停止。")
     found = []
-    root_prefix = os.path.normcase(str(root)).rstrip("\\/") + "\\"
     try:
         entry = ProcessEntry()
         entry.dwSize = ctypes.sizeof(entry)
@@ -174,17 +194,18 @@ def _assert_game_stopped(root: Path) -> None:
             raise DeploymentError("无法读取进程列表，已停止。")
         while True:
             name = entry.szExeFile
-            handle = kernel.OpenProcess(0x1000, False, entry.th32ProcessID)
             image = None
-            if handle:
-                try:
-                    buffer = ctypes.create_unicode_buffer(32768)
-                    size = wintypes.DWORD(len(buffer))
-                    if kernel.QueryFullProcessImageNameW(handle, 0, buffer, ctypes.byref(size)):
-                        image = os.path.normcase(buffer.value)
-                finally:
-                    kernel.CloseHandle(handle)
-            if (image and image.startswith(root_prefix)) or (not image and name.lower() in {"acecombat8.exe", "start_protected_game.exe"}):
+            if name.casefold() in GAME_PROCESS_NAMES:
+                handle = kernel.OpenProcess(0x1000, False, entry.th32ProcessID)
+                if handle:
+                    try:
+                        buffer = ctypes.create_unicode_buffer(32768)
+                        size = wintypes.DWORD(len(buffer))
+                        if kernel.QueryFullProcessImageNameW(handle, 0, buffer, ctypes.byref(size)):
+                            image = buffer.value
+                    finally:
+                        kernel.CloseHandle(handle)
+            if _is_game_process(root, name, image):
                 found.append(f"{name} (PID {entry.th32ProcessID})")
             if not kernel.Process32NextW(snapshot, ctypes.byref(entry)):
                 if ctypes.get_last_error() != 18:  # ERROR_NO_MORE_FILES

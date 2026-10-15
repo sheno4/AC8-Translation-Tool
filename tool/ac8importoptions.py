@@ -35,6 +35,10 @@ _CP_TARGET_PREFIXES = (
     'HudContainerinfo_Name_',
 )
 
+# The replay player label uses this briefing-named slot. Keep the separate
+# HangarSelectaircraftTitle_Name_Player occurrence available for translation.
+_CP_TARGET_EXACT_IDS = frozenset(('ContainerBriefing_Name_Rex',))
+
 _ON_TARGET_PREFIXES = (
     'Online_ContainerCorpsName_',
     'Online_Hud_OnlineMissionCallsign_',
@@ -96,7 +100,8 @@ def normalize_options(options):
 
 def _hud_label(domain, text_id):
     if domain == 'CP':
-        if text_id.startswith(_CP_TARGET_PREFIXES + _CP_STATUS_PREFIXES):
+        if (text_id in _CP_TARGET_EXACT_IDS
+                or text_id.startswith(_CP_TARGET_PREFIXES + _CP_STATUS_PREFIXES)):
             return True
         return (text_id.startswith('HudOther_Name_')
                 and text_id not in _CP_OTHER_EXCLUDED)

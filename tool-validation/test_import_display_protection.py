@@ -264,7 +264,7 @@ class ImportDisplayProtectionTests(unittest.TestCase):
             self.assertFalse((root / 'unread-game').exists())
             self.assertTrue(ac8tool._json_read(workspace / 'stage-state.json')['previous_payload'])
 
-    def test_hud_target_protection_does_not_exclude_briefing_or_hangar_ui(self):
+    def test_rex_replay_protection_keeps_other_briefing_and_hangar_ui(self):
         def entry(identity, text, translation, slots, domain='CP'):
             return dict(id='gd:' + identity, category='GameData', ja=text, en=text,
                         translation=translation, format_source='ja', occurrences=[
@@ -285,6 +285,8 @@ class ImportDisplayProtectionTests(unittest.TestCase):
                 (5, 'HangarSelectaircraftTitle_Name_Selectaircraft2'),
             ]),
             entry('wingman', 'WINGMAN', '僚机', [(6, 'HangarSelectaircraftTitle_Name_Wingman1')]),
+            entry('briefing-tasha', 'TASHA', '塔莎', [(8, 'ContainerBriefing_Name_Tasha')]),
+            entry('briefing-coster', 'COSTER', '科斯达', [(9, 'ContainerBriefing_Name_Coster')]),
             entry('online', 'Online', '线上中文', [(0, 'Online_Common_Mainmenu_Name')], 'ON'),
         )
         sources = [dict(domain=slot['domain'], index=slot['index'],
@@ -309,14 +311,14 @@ class ImportDisplayProtectionTests(unittest.TestCase):
             protected = ac8tool.stage_translations(root / 'unread-game', source,
                                                    root / 'workspace', import_options={})
             self.assertEqual(self.decode_pool(protected['payload_dir'], 'CP'),
-                             ['雷克斯', '雷克斯', '雷克斯', '雷克斯，注意。',
-                              '选择机体', '选择机体', '僚机', 'REX'])
+                             ['REX', '雷克斯', '雷克斯', '雷克斯，注意。',
+                              '选择机体', '选择机体', '僚机', 'REX', '塔莎', '科斯达'])
             self.assertEqual(self.decode_pool(protected['payload_dir'], 'ON'), ['线上中文'])
             full = ac8tool.stage_translations(root / 'unread-game', source, root / 'workspace',
                                              import_options={'hud_labels': True})
             self.assertEqual(self.decode_pool(full['payload_dir'], 'CP'),
                              ['雷克斯', '雷克斯', '雷克斯', '雷克斯，注意。',
-                              '选择机体', '选择机体', '僚机', '雷克斯'])
+                              '选择机体', '选择机体', '僚机', '雷克斯', '塔莎', '科斯达'])
             self.assertEqual(source.read_bytes(), before)
             self.assertFalse((root / 'unread-game').exists())
 
