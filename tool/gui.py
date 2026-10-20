@@ -18,7 +18,8 @@ TOOL_VERSION = VERSION_FILE.read_text(encoding='utf-8-sig').strip()
 APP_TITLE = 'AC8翻译工具 v' + TOOL_VERSION
 import ac8tool
 import ac8compare
-import deployment
+import runtime_deployment as deployment
+import deployment_api
 from ac8paths import find_game_directories
 from ac8importoptions import DEFAULT_IMPORT_OPTIONS, GROUP_DEFINITIONS
 
@@ -35,10 +36,12 @@ PATCH_ID = 'ac8-zh-text-25201480-v1'
 
 def confirm_import_result(installed):
     """Accept success only after all managed files and backups were verified."""
-    required = {deployment.EXE_PATH, *deployment.DATA_PATHS}
+    required = set(deployment.MANAGED_PATHS)
     checks = installed.get('files') if isinstance(installed, dict) else None
     if (not isinstance(installed, dict) or installed.get('state') != 'installed'
             or installed.get('installed') is not True or not isinstance(checks, list)
+            or installed.get('mode') != 'pak_loader'
+            or installed.get('exe_modified') is not False
             or len(checks) != len(required)
             or any(not isinstance(item, dict) or item.get('valid') is not True
                    or item.get('backup_valid') is not True for item in checks)
@@ -300,14 +303,12 @@ class Window:
             candidates = {name: list(payload_root.rglob(name)) for name in ('CP_M.dat', 'ON_M.dat')}
             if any(len(paths) != 1 for paths in candidates.values()):
                 raise ValueError('生成的中文资源不完整，游戏尚未修改。')
-            payloads = {'Game/Content/Localization/GameData/CP_Z.dat': candidates['CP_M.dat'][0],
-                        'Game/Content/Localization/GameData/ON_Z.dat': candidates['ON_M.dat'][0]}
             hook_config = result.get('game_check', {}).get('hook_config')
             if not isinstance(hook_config, dict):
                 raise ValueError('未获得当前游戏的兼容补丁，游戏尚未修改。')
-            installed = deployment.install(game, payloads, hook_config)
+            installed = deployment_api.install(game, payload_root, hook_config)
             confirm_import_result(installed)
-            return {'result': '中文资源已导入；撤回可恢复导入前文件', 'translation_counts': result.get('counts'), 'deployment': installed}
+            return {'result': '中文资源补丁已导入；不再改写磁盘游戏 EXE', 'translation_counts': result.get('counts'), 'deployment': installed}
         self.run('导入译文', work)
 
     def restore(self):

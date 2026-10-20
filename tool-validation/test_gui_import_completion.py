@@ -61,8 +61,9 @@ class GuiImportCompletionTests(unittest.TestCase):
         self.addCleanup(thread.stop)
         self.valid_result = dict(
             state='installed', installed=True, action='installed',
+            mode='pak_loader', exe_modified=False,
             files=[dict(path=path, valid=True, backup_valid=True)
-                   for path in (gui.deployment.EXE_PATH, *gui.deployment.DATA_PATHS)])
+                   for path in gui.deployment.MANAGED_PATHS])
         self.window = object.__new__(gui.Window)
         self.window.root = FakeRoot()
         self.window.messages = queue.Queue()

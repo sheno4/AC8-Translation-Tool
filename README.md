@@ -1,13 +1,10 @@
 # AC8翻译工具 · ACE COMBAT 8
 
-当前发布版本为 **1.0.4**。窗口标题、主界面标题和导入状态均显示工具版本。
+当前发布版本为 **1.1**。窗口标题、主界面标题和导入状态均显示工具版本。
 
-下载 **[1.0.4 发布版](https://github.com/sheno4/AC8-Translation-Tool/releases/tag/v1.0.4)**：
+下载 **[AC8中文翻译1.1.zip](https://github.com/sheno4/AC8-Translation-Tool/releases/download/v1.1/AC8-1.1.zip)**，包含工具、两份 2026.10.21 AI 校订译文、使用说明和离线配置。请先完整解压。
 
-- [AC8翻译工具-1.0.4.exe](https://github.com/sheno4/AC8-Translation-Tool/releases/download/v1.0.4/AC8-1.0.4.exe)：独立工具，不含已填写译文。
-- [AC8中文翻译-1.0.4.zip](https://github.com/sheno4/AC8-Translation-Tool/releases/download/v1.0.4/AC8-1.0.4.zip)：现成译文包，包含工具、两份 2026.10.15 AI 校订译文、使用说明和离线配置。
-
-Windows 64 位独立程序，用于导出日英文本、填写中文译文并替换游戏的官方简体中文。
+Windows 64 位工具，用于导出日英文本、填写中文译文并替换游戏的官方简体中文。
 双击 **AC8翻译工具.exe**，无需安装 Python。请将它放在有写入权限的普通文件夹中。
 也可双击 **AC8翻译工具.cmd** 启动同目录的 EXE，无需 Python；EXE 可单独分享，CMD 须与 EXE 放在一起。
 `workspace` 工作目录保存在 EXE 旁，译文由你选择保存位置；EXE 不包含个人译文。
@@ -15,10 +12,10 @@ Windows 64 位独立程序，用于导出日英文本、填写中文译文并替
 
 ## 最新译文
 
-2026 年 10 月 15 日的 AI 校订版，选择一份 JSON 下载后在工具中校验并导入。
+2026 年 10 月 21 日的 AI 校订版，选择一份 JSON 在工具中校验并导入。发布压缩包已包含以下两份译文：
 
-- [仅重译官中 · AI 校订 2026.10.15](https://github.com/sheno4/AC8-Translation-Tool/raw/refs/heads/main/%E8%AF%91%E6%96%87/ACE8-AI%E4%BB%85%E9%87%8D%E8%AF%91%E5%AE%98%E4%B8%AD_AI%E6%A0%A1%E8%AE%A22026.10.15.json?download=1)
-- [完全重译 · AI 校订 2026.10.15](https://github.com/sheno4/AC8-Translation-Tool/raw/refs/heads/main/%E8%AF%91%E6%96%87/ACE8-AI%E5%AE%8C%E5%85%A8%E9%87%8D%E8%AF%91_AI%E6%A0%A1%E8%AE%A22026.10.15.json?download=1)
+- [仅重译官中 · AI 校订 2026.10.21](https://github.com/sheno4/AC8-Translation-Tool/raw/refs/heads/main/%E8%AF%91%E6%96%87/ACE8-AI%E4%BB%85%E9%87%8D%E8%AF%91%E5%AE%98%E4%B8%AD_AI%E6%A0%A1%E8%AE%A22026.10.21.json?download=1)
+- [完全重译 · AI 校订 2026.10.21](https://github.com/sheno4/AC8-Translation-Tool/raw/refs/heads/main/%E8%AF%91%E6%96%87/ACE8-AI%E5%AE%8C%E5%85%A8%E9%87%8D%E8%AF%91_AI%E6%A0%A1%E8%AE%A22026.10.21.json?download=1)
 
 ## 使用步骤
 
@@ -83,12 +80,13 @@ JSON 中双引号写成 `\"`，反斜杠写成 `\\`，换行写成 `\n`；保存
 
 ## 备份与版本
 
-导入会备份原文件，并修改游戏 `AceCombat8.exe`，使其读取生成的 `CP_Z.dat`、`ON_Z.dat`。备份在游戏目录 `.AC8-Localization-backup`。
-撤回恢复首次导入前的游戏文件，不依赖 EXE 所在位置；撤回前请保留备份。
+1.1 将译文生成的 `CP_M.dat`、`ON_M.dat` 打成独立 PAK，配合 `dinput8.dll` 加载器覆盖原中文资源，磁盘上的游戏 EXE 不修改。
+加载器在运行时仅为本工具的 PAK 挂钩签名读取，不依赖 UE4SS。
+从 1.0.x 升级时，重新导入会先恢复原游戏 EXE，再安装新资源补丁；撤回 1.1 会移除本工具安装的 PAK 和 DLL。
+备份和安装记录在游戏目录 `.AC8-Localization-backup`，撤回前请保留。
 导出、译文校验和对照使用内置原文库，不检查 Steam 版本或游戏文件，也无需选择游戏目录。
-导入按当前 EXE 的补丁代码结构和八份相关文本资源检查兼容性，不锁定某个 Steam 构建版本或整份资源包的哈希。
-游戏更新后，相关代码和文本保持兼容时可重新导入；撤回恢复更新后的原 EXE。
-补丁代码或文本映射改变时会提示需要适配，避免将旧译文写入错误位置。
+导入按当前 EXE 的加载器所需代码结构和八份相关文本资源检查兼容性，不锁定某个 Steam 构建版本或整份资源包的哈希。
+游戏更新后，相关代码和文本保持兼容时可重新导入；结构或文本映射改变时会提示需要适配。
 JSON 中的版本信息描述内置原文快照，已有译文文件继续兼容。
 本工具不修改反作弊设置；联机前可通过“撤回修改”恢复原文件。
 源码版本由 Git 管理，版本号见 `VERSION`，历史见 `CHANGELOG.md`。

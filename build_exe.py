@@ -21,6 +21,8 @@ OUTPUT = ROOT / (NAME + '.exe')
 def main():
     if os.name != 'nt':
         raise RuntimeError('EXE 必须在 Windows 上构建。')
+    subprocess.run([sys.executable, '-B', str(ROOT / 'scripts' / 'build_runtime_loader.py')],
+                   cwd=ROOT, check=True)
     sys.path.insert(0, str(DEPS))
     import PyInstaller
     version = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
@@ -75,6 +77,7 @@ def main():
                '--onefile', '--windowed', '--noupx', '--noconfirm', '--name', NAME,
                '--paths', str(TOOL), '--hidden-import', 'deployment_api',
                '--hidden-import', 'ac8exehook', '--hidden-import', 'ac8resourcecompat',
+               '--hidden-import', 'runtime_deployment', '--hidden-import', 'ac8pak',
                '--distpath', str(WORK / 'dist'), '--workpath', str(WORK / 'work'),
                '--specpath', str(WORK / 'spec'), '--version-file', str(version_file),
                '--log-level', 'INFO']

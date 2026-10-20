@@ -493,13 +493,15 @@ def _scan_archive(path, wanted, exe_source, hint_offset, keys, aes):
                                    relevant_entries=len(observations), own_index_verified=True)
 
 
-def check_resources(game_dir, exe_source, expected_baseline=None):
+def check_resources(game_dir, exe_source, expected_baseline=None, *, owned_archives=None):
     """Return readable compatibility status; never modify game or persist AES.
 
     expected_baseline is a baseline dict or JSON path. exe_source must point to
     the current original EXE (or its deployment-verified original backup).
     Archives are resolved dynamically; every occurrence of a relevant path
     must match, preventing an updated patch container from shadowing old text.
+    A deployment-owned localization PAK may be excluded only by its exact
+    managed path and a freshly verified SHA256 supplied by the deployment layer.
     """
     baseline = expected_baseline or DEFAULT_BASELINE
     try:
@@ -515,6 +517,20 @@ def check_resources(game_dir, exe_source, expected_baseline=None):
             _fail('找不到用于只读资源检查的原 EXE。')
         paks_dir = game_dir / 'Game/Content/Paks'
         archives = sorted(paks_dir.rglob('*.pak'))
+        ignored = []
+        for relative, expected_hash in (owned_archives or {}).items():
+            if (relative != 'Game/Content/Paks/pakchunk0-Windows_998_P.pak'
+                    or not isinstance(expected_hash, str)
+                    or not re.fullmatch(r'[0-9a-f]{64}', expected_hash)):
+                _fail('自有资源补丁的检查范围无效。')
+            own = game_dir / relative
+            if own not in archives or not own.is_file() or own.is_symlink():
+                _fail('自有资源补丁已丢失或不再是普通文件。')
+            with own.open('rb') as stream:
+                if hashlib.file_digest(stream, 'sha256').hexdigest() != expected_hash:
+                    _fail('自有资源补丁在兼容检查期间发生变化。')
+            archives.remove(own)
+            ignored.append(relative)
         if not archives:
             _fail('找不到游戏 PAK 资源包。')
         aes, keys, observed, archives_checked = _AesEcb(), [], defaultdict(list), []
@@ -562,6 +578,7 @@ def check_resources(game_dir, exe_source, expected_baseline=None):
             message='CP/ON 槽表及日英官中资源与翻译快照一致。' if compatible else
                     '相关本地化资源发生变化，需要更新原文字库后导入，已停止覆盖。',
             errors=mismatches, resources=checked, archives_checked=archives_checked,
+            owned_resource_archives=ignored,
             compatibility_scope='CP/ON Cmn, Japanese, English and official Chinese opaque resource bytes',
             snapshot_fingerprint=baseline.get('snapshot_fingerprint'),
             archive_size_locked=False, whole_archive_hash_locked=False, fixed_build_locked=False,

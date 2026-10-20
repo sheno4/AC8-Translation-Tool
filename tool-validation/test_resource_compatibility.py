@@ -133,6 +133,22 @@ class ResourceCompatibilityTests(unittest.TestCase):
         self.assertEqual(result['state'], 'incompatible')
         self.assertEqual([error['path'] for error in result['errors']], [path])
 
+    def test_owned_text_pak_is_excluded_only_when_its_exact_hash_matches(self):
+        folder = self._game('owned-text-patch', self.source)
+        relative = 'Game/Content/Paks/pakchunk0-Windows_998_P.pak'
+        own = folder / relative
+        _write_pak(own, {'Live/Content/Localization/GameData/CP_M.dat': b'new translation'})
+        digest = hashlib.sha256(own.read_bytes()).hexdigest()
+        self.assertFalse(self._check(folder)['ok'])
+        checked = compat.check_resources(folder, self.exe, self.baseline,
+                                         owned_archives={relative: digest})
+        self.assertTrue(checked['ok'], checked)
+        self.assertEqual(checked['owned_resource_archives'], [relative])
+        self.assertFalse(compat.check_resources(folder, self.exe, self.baseline,
+                         owned_archives={relative: '0' * 64})['ok'])
+        self.assertFalse(compat.check_resources(folder, self.exe, self.baseline,
+                         owned_archives={'Game/Content/Paks/rebuilt.pak': digest})['ok'])
+
 
 if __name__ == '__main__':
     unittest.main()

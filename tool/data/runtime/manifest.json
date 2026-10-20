@@ -1,0 +1,42 @@
+{
+  "schema": "ac8-pak-runtime-loader-v1",
+  "source_sha256": {
+    "native/runtime_loader.cpp": "bec2acd32a28354f31bcf34a2ef42d162c4bbdfa1483e53b2a01f89cf546aae6",
+    "native/entry_gate.S": "965f9ea39f62fd265166709a0e8c482e7105da2c09fdfacce1a1f6fa9c02d4cd",
+    "native/dinput8.def": "9e222efbebd7882a4f8bb96d4e7a414f323dfe0c802a513a47e54ee898cee384",
+    "scripts/build_runtime_loader.py": "5f5d4776197aefed255b45207be68dcc47fda293433922e26c0e1136654fe4f3",
+    "vendor/minhook/include/MinHook.h": "62dff05e63155c6bf8135c36a0d79dedbdcaaede9da26fe38daf0bea34323e38",
+    "vendor/minhook/LICENSE.txt": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8",
+    "vendor/minhook/README.md": "66f55334357ca5e76ffb2fa5075ef839346981b4ed6137730bda8c65e8c38d7b",
+    "vendor/minhook/src/buffer.c": "0ab484d7870c3a8e7a3a1ee61e2070072cf445ed85b619d4c4207fed34356d99",
+    "vendor/minhook/src/buffer.h": "9769702bd625249e59a19ede05c84365fcc7707e1fa0e5df08df42227cee13e3",
+    "vendor/minhook/src/hde/hde32.c": "5da4941e9044f7b325c7f952b5840089e365f374740b7fe7318805d08c0d6c32",
+    "vendor/minhook/src/hde/hde32.h": "5132de5be8ac7a9d054420f5caef0fb01437faa892f03b3cdc77f795973bf15a",
+    "vendor/minhook/src/hde/hde64.c": "824eafa315322e6da105a7ce4ec1fc0e0adeee0106d32152fbb0b59e709bd15c",
+    "vendor/minhook/src/hde/hde64.h": "e99aa4997bda14b534c614c3d8cb78a72c4aca91a1212c8b03ec605d1d75e36e",
+    "vendor/minhook/src/hde/pstdint.h": "604d1cdf45c5a95bc9cf1bbf39ca05ef83013541101d34971c5cd7577e3d5247",
+    "vendor/minhook/src/hde/table32.h": "43bf687a9fff071b5f46070db4d36c846f8e069cdc57485ee897c499aacdde23",
+    "vendor/minhook/src/hde/table64.h": "b774446d2f110ce954fb0a710f4693c5562ddbd8d56fe84106f2ee80db8b50a2",
+    "vendor/minhook/src/hook.c": "edcce4c81985d7dd5b73feae96d6498c8f749b1bca4c3d2d9926ea9a17a84755",
+    "vendor/minhook/src/trampoline.c": "f13a169f803ff5a8e45c58ce668b4377a9878c0fc4452369b8a1325065186b2b",
+    "vendor/minhook/src/trampoline.h": "53ed9934492320617a27bfd952ffe7f5b7a4a1d09963d4512447082fe7b727b4",
+    "vendor/minhook/UPSTREAM.txt": "95d3e64b077f55451d572f365509aa3b9fe3d000e615060c990b8395829a95e8"
+  },
+  "artifacts": {
+    "dinput8.dll": {
+      "bytes": 501926,
+      "sha256": "e4c1e462449c0c55214870d826866a31c14b47b10e532f28ea18fc732c7bb9d8"
+    }
+  },
+  "exe_modified_on_disk": false,
+  "route": "scoped-original-path-localization-pak",
+  "pak_filename": "pakchunk0-Windows_998_P.pak",
+  "game_started": false,
+  "runtime_verified": false,
+  "licenses": {
+    "licenses/MinHook_LICENSE.txt": {
+      "bytes": 4365,
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    }
+  }
+}

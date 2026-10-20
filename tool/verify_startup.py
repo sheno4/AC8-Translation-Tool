@@ -21,8 +21,11 @@ def verify_bundle():
     import ac8paths
     import deployment
     import deployment_api
+    import runtime_deployment
+    import ac8pak
     import gui
     import locres_codec
+    ac8pak.load_runtime_loader()
 
     frozen = bool(getattr(sys, 'frozen', False))
     if frozen or os.environ.get('AC8_TOOL_HOME'):
@@ -48,6 +51,7 @@ def verify_bundle():
     return dict(ok=True, bundled_files=len(manifest), counts=counts, frozen=frozen,
                 tool_version=gui.TOOL_VERSION, window_title=gui.APP_TITLE,
                 external_python_required=not frozen,
+                deployment_mode='pak_loader', disk_exe_patch_required=False,
                 tkinter_imported=True, window_created=False,
                 game_accessed=False, official_chinese_read=False,
                 default_export_language=gui.DEFAULT_EXPORT_LANGUAGE,

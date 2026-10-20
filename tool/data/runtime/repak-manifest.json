@@ -1,0 +1,16 @@
+{
+  "schema": "ac8-repak-runtime-v1",
+  "upstream": "https://github.com/trumank/repak",
+  "cli_version": "repak_cli 0.2.0",
+  "license": "MIT OR Apache-2.0",
+  "artifacts": {
+    "repak.exe": {
+      "sha256": "c7a8d272405874bf9105f20f58dc9651696429ec82c7ea82fe08332d83919004",
+      "bytes": 4008448
+    }
+  },
+  "license_files": [
+    "repak-LICENSE-APACHE.txt",
+    "repak-LICENSE-MIT.txt"
+  ]
+}
